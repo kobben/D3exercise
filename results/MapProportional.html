@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+<head><title>The Graphic Web Locations</title>
+<script src="./lib/d3.v3.min.js"></script>
+<style>
+    .mapSVG {
+        background-color: rgb(255,255,255);
+    }
+    .municipality {
+        fill: rgb(255,240,214);
+        stroke: rgb(255,159,227);
+    }
+    .propCircle {
+        fill: rgb(255,0,0);
+        opacity: 0.5;
+    }
+</style>
+<body>
+
+<div id="mapDiv"></div>
+
+<script>
+
+var mapWidth = 400, mapHeight = 350;
+var mapDiv, mapSVG, svgpath;
+
+// select the mapDiv by id:
+mapDiv = d3.select("#mapDiv");
+
+// create an svg of fixed size:
+mapSVG = mapDiv.append("svg")
+        .attr("class", "mapSVG")
+        .attr("width", mapWidth)
+        .attr("height", mapHeight)
+;
+
+// Define Mercator proj to center at data (lon-lat)
+// scaled and translated to fit svg size:
+var myProj = d3.geo.mercator()
+        .center([6.4 , 52.5])
+        .scale(15000)
+        .translate([mapWidth / 2, mapHeight / 2])
+;
+
+//Define svg path generator using the projection
+svgpath = d3.geo.path()
+        .projection(myProj);
+
+// asynchronously load geojson:
+d3.json("overijssel.json", function (error, myGeoJson) {
+    if (error != undefined) alert("ERROR loading file!");
+    // create new svg paths:
+    mapSVG.selectAll("path")
+        // bind the data:
+        .data(myGeoJson.features).enter()
+        // for each d create a path:
+        .append("path")
+        .attr("class", "municipality")
+        .attr("d", svgpath)
+    ;
+    // create new svg circles on top:
+    mapSVG.selectAll("circle")
+        // bind the data:
+        .data(myGeoJson.features).enter()
+        // for each d create a circle:
+        .append("circle")
+        .attr("class", "propCircle")
+        .attr("cx", function (d) {
+            // get centroid X of geo path:
+            return svgpath.centroid(d)[0];
+        })
+        .attr("cy", function (d) {
+            // get centroid Y of geo path:
+            return svgpath.centroid(d)[1];
+        })
+        .attr("r", function (d) {
+            // radius = (sq.root of inhabitants / π) * a fixed ratio:
+            return (Math.sqrt(d.properties.aant_inw) / Math.PI) * 0.2;
+        })
+    ;
+
+}); //end of load function
+
+</script>
+
+</body>
+</html>
+
